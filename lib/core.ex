@@ -13,28 +13,10 @@ defmodule ArquosRepoHelper.Core do
 
   defp error_message(msg, :msg_conn), do: {:error, :connection_error, msg}
 
-  defp error_message(msg, :db_conn), do: {:error, %DBConnection.ConnectionError{message: msg}}
-
   defp error_message(msg, :sql_msg), do: {:error, :sql_error, msg}
 
-  defp error_sql(msg_text, proc_name, server_name, :tds_msg),
+  defp error_sql(msg_text, proc_name, server_name),
     do: {:error, :sql_error, "#{server_name}|#{proc_name}|#{msg_text}"}
-
-  defp error_sql(msg_text, proc_name, server_name, :tds_error) do
-    {:error,
-     %Tds.Error{
-       message: _message,
-       mssql: %{
-         class: _class,
-         line_number: _line_number,
-         msg_text: msg_text,
-         number: _number,
-         proc_name: proc_name,
-         server_name: server_name,
-         state: _state
-       }
-     }}
-  end
 
   defp tds_tuple(columns, rows, num_rows), do: {:ok, tds_result(columns, rows, num_rows)}
 
@@ -43,7 +25,7 @@ defmodule ArquosRepoHelper.Core do
 
   defp error_type_msg(type, msg), do: {:error, type, msg}
 
-  defp case_sql_execute(data) do
+  defp case_sql_execute(data, resultset) do
     case data do
       {:ok, bitacora, _colum_names, _row_count} ->
         case check_log(bitacora) do
@@ -51,7 +33,7 @@ defmodule ArquosRepoHelper.Core do
             maybe_dataset =
               if(length(resultset) > 1, do: List.delete_at(resultset, -1), else: resultset)
               |> Stream.map(fn
-                tds_result(lst_column_names, lst_data_rows, row_count) ->
+                %Tds.Result{columns: lst_colum_names, rows: lst_data_rows, num_rows: row_count} ->
                   tds_result(lst_colum_names, lst_data_rows, row_count) |> tds_result_to_table()
               end)
               |> Enum.to_list()
@@ -79,7 +61,7 @@ defmodule ArquosRepoHelper.Core do
               :ok,
               resultset
               |> Stream.map(fn
-                tds_result(lst_column_names, lst_data_rows, row_count) ->
+                %Tds.Result{columns: lst_colum_names, rows: lst_data_rows, num_rows: row_count} ->
                   tds_result(lst_colum_names, lst_data_rows, row_count) |> tds_result_to_table()
               end)
               |> Stream.map(fn
@@ -314,11 +296,23 @@ defmodule ArquosRepoHelper.Core do
           stop_server(connection)
           {:ok, result_list, count: length(result_list)}
         else
-          error_message(msg_text, :db_conn) ->
+          {:error, %DBConnection.ConnectionError{message: msg_text}} ->
             error_message(msg_text, :msg_conn)
 
-          error_sql(msg_text, proc_name, server_name, :tds_error) ->
-            error_sql(msg_text, proc_name, server_name, :tds_msg)
+          {:error,
+           %Tds.Error{
+             message: _message,
+             mssql: %{
+               class: _class,
+               line_number: _line_number,
+               msg_text: msg_text,
+               number: _number,
+               proc_name: proc_name,
+               server_name: server_name,
+               state: _state
+             }
+           }} ->
+            error_sql(msg_text, proc_name, server_name)
         end
 
       true ->
@@ -331,17 +325,30 @@ defmodule ArquosRepoHelper.Core do
       String.length(qry) > 0 ->
         with {:ok, connection} <- tds_start(repo),
              result <- tds_query(connection, qry, :one),
-             tds_tuple(lst_colum_names, lst_data_rows, row_count) <-
+             {:ok,
+              %Tds.Result{columns: lst_colum_names, rows: lst_data_rows, num_rows: row_count}} <-
                result do
           stop_server(connection)
 
           tds_tuple(lst_colum_names, lst_data_rows, row_count)
         else
-          error_message(msg_text, :db_conn) ->
+          {:error, %DBConnection.ConnectionError{message: msg_text}} ->
             error_message(msg_text, :msg_conn)
 
-          error_sql(msg_text, proc_name, server_name, :tds_error) ->
-            error_sql(msg_text, proc_name, server_name, :tds_msg)
+          {:error,
+           %Tds.Error{
+             message: _message,
+             mssql: %{
+               class: _class,
+               line_number: _line_number,
+               msg_text: msg_text,
+               number: _number,
+               proc_name: proc_name,
+               server_name: server_name,
+               state: _state
+             }
+           }} ->
+            error_sql(msg_text, proc_name, server_name)
         end
 
       true ->
@@ -351,35 +358,35 @@ defmodule ArquosRepoHelper.Core do
 
   def sql_execute(repo, qry) do
     case sql_script(repo, qry) do
-      error_type_msg(type, msg) ->
+      {:error, type, msg} ->
         error_type_msg(type, msg)
 
-      tds_tuple(lst_colum_names, lst_data_rows, row_count) ->
+      {:ok, %Tds.Result{columns: lst_colum_names, rows: lst_data_rows, num_rows: row_count}} ->
         tds_result(lst_colum_names, lst_data_rows, row_count) |> tds_result_to_table()
     end
   end
 
   def sql_execute(repo, qry, :many) do
     case sql_script(repo, qry, :many) do
-      error_type_msg(type, msg) ->
+      {:error, type, msg} ->
         error_type_msg(type, msg)
 
       {:ok, resultset, count: _count} ->
-        with tds_result(lst_column_names, lst_data_rows, row_count) <-
+        with %Tds.Result{columns: lst_colum_names, rows: lst_data_rows, num_rows: row_count} <-
                List.last(resultset),
              data <-
                tds_result(lst_colum_names, lst_data_rows, row_count) |> tds_result_to_table() do
-          case_sql_execute(data)
+          case_sql_execute(data, resultset)
         end
     end
   end
 
   def sql_execute(repo, qry, toStruct) do
     case sql_script(repo, qry) do
-      error_type_msg(type, msg) ->
+      {:error, type, msg} ->
         error_type_msg(type, msg)
 
-      tds_tuple(lst_colum_names, lst_data_rows, row_count) ->
+      {:ok, %Tds.Result{columns: lst_colum_names, rows: lst_data_rows, num_rows: row_count}} ->
         cond do
           lst_data_rows == nil ->
             {:ok, [], [], row_count}
