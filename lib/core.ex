@@ -23,15 +23,15 @@ defmodule ArquosRepoHelper.Core do
   defp error_sql(msg_text, proc_name, server_name, :tds_error) do
     {:error,
      %Tds.Error{
-       message: _,
+       message: _message,
        mssql: %{
-         class: _,
-         line_number: _,
+         class: _class,
+         line_number: _line_number,
          msg_text: msg_text,
-         number: _,
+         number: _number,
          proc_name: proc_name,
          server_name: server_name,
-         state: _
+         state: _state
        }
      }}
   end
