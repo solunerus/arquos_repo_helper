@@ -191,8 +191,8 @@ defmodule ArquosRepoHelper.Core do
   defp is_naivedatetime?(_), do: false
   defp is_time?(%Time{}), do: true
   defp is_time?(_), do: false
-  defp is_datetime?(%DateTime{}), do: true
-  defp is_datetime?(_), do: false
+  # defp is_datetime?(%DateTime{}), do: true
+  # defp is_datetime?(_), do: false
   defp is_maybe_datetime?({{_yyyy, _mm, _dd}, {_hh, _mi, _ss, _mss}}), do: true
   defp is_maybe_datetime?(_), do: false
   defp is_maybe_date?({_yyyy, _mm, _dd}), do: true
@@ -200,16 +200,16 @@ defmodule ArquosRepoHelper.Core do
   defp is_date?(%Date{}), do: true
   defp is_date?(_), do: false
 
-  @spec float_to_binary(float) :: binary
-  defp float_to_binary(f), do: float_to_binary(f, 4)
+  # @spec float_to_binary(float) :: binary
+  # defp float_to_binary(f), do: float_to_binary(f, 4)
 
-  @spec float_to_binary(float, integer) :: binary
-  defp float_to_binary(f, nd) do
-    fl = :erlang.float_to_binary(f, [:compact, {:decimals, nd}])
-    [i, d] = fl |> String.split(".")
-    d = d |> String.pad_trailing(nd, "0")
-    i <> "." <> d
-  end
+  # @spec float_to_binary(float, integer) :: binary
+  # defp float_to_binary(f, nd) do
+  #   fl = :erlang.float_to_binary(f, [:compact, {:decimals, nd}])
+  #   [i, d] = fl |> String.split(".")
+  #   d = d |> String.pad_trailing(nd, "0")
+  #   i <> "." <> d
+  # end
 
   defp maybe_date_to_string({yyyy, mm, dd}) do
     year = Integer.to_string(yyyy)
@@ -262,31 +262,31 @@ defmodule ArquosRepoHelper.Core do
     Enum.to_list(data_rows)
   end
 
-  defp typeof(self) do
-    cond do
-      is_float(self) -> "float"
-      is_integer(self) -> "integer"
-      Decimal.is_decimal(self) -> "decimal"
-      is_number(self) -> "number"
-      is_atom(self) -> "atom"
-      is_boolean(self) -> "boolean"
-      is_binary(self) -> "binary"
-      is_function(self) -> "function"
-      is_list(self) -> "list"
-      is_tuple(self) -> "tuple"
-      is_naivedatetime?(self) -> "naivedatetime"
-      is_datetime?(self) -> "datetime"
-      is_date?(self) -> "date"
-      is_time?(self) -> "time"
-      true -> self |> IO.inspect(label: "typeof unknow:")
-    end
-  end
+  # defp typeof(self) do
+  #   cond do
+  #     is_float(self) -> "float"
+  #     is_integer(self) -> "integer"
+  #     Decimal.is_decimal(self) -> "decimal"
+  #     is_number(self) -> "number"
+  #     is_atom(self) -> "atom"
+  #     is_boolean(self) -> "boolean"
+  #     is_binary(self) -> "binary"
+  #     is_function(self) -> "function"
+  #     is_list(self) -> "list"
+  #     is_tuple(self) -> "tuple"
+  #     is_naivedatetime?(self) -> "naivedatetime"
+  #     is_datetime?(self) -> "datetime"
+  #     is_date?(self) -> "date"
+  #     is_time?(self) -> "time"
+  #     true -> self |> IO.inspect(label: "typeof unknow:")
+  #   end
+  # end
 
-  defp pow(n, k), do: pow(n, k, 1)
-  defp pow(_, 0, acc), do: acc
-  defp pow(n, k, acc), do: pow(n, k - 1, n * acc)
+  # defp pow(n, k), do: pow(n, k, 1)
+  # defp pow(_, 0, acc), do: acc
+  # defp pow(n, k, acc), do: pow(n, k - 1, n * acc)
 
-  defp is_upcase?(x), do: x == String.upcase(x)
+  # defp is_upcase?(x), do: x == String.upcase(x)
 
   def sql_script(repo, qry, :many) do
     cond do
@@ -303,13 +303,13 @@ defmodule ArquosRepoHelper.Core do
            %Tds.Error{
              message: _message,
              mssql: %{
-               class: _class,
-               line_number: _line_number,
+               #  class: _class,
+               #  line_number: _line_number,
                msg_text: msg_text,
-               number: _number,
+               #  number: _number,
                proc_name: proc_name,
-               server_name: server_name,
-               state: _state
+               server_name: server_name
+               #  state: _state
              }
            }} ->
             error_sql(msg_text, proc_name, server_name)
@@ -339,13 +339,13 @@ defmodule ArquosRepoHelper.Core do
            %Tds.Error{
              message: _message,
              mssql: %{
-               class: _class,
-               line_number: _line_number,
+               #  class: _class,
+               #  line_number: _line_number,
                msg_text: msg_text,
-               number: _number,
+               #  number: _number,
                proc_name: proc_name,
-               server_name: server_name,
-               state: _state
+               server_name: server_name
+               #  state: _state
              }
            }} ->
             error_sql(msg_text, proc_name, server_name)
