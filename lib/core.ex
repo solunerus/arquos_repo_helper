@@ -1,5 +1,5 @@
 defmodule ArquosRepoHelper.Core do
-  def new(), do: %{}
+  require Decimal
 
   defp tds_start(repo), do: Tds.start_link(repo)
 
