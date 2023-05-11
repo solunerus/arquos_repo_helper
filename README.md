@@ -1,21 +1,31 @@
 # ArquosRepoHelper
 
-**TODO: Add description**
+## Motivo
 
-## Installation
+El proyecto sirve como alternativa para ejecutar scripts (ej. procedimientos almacenados) de  MS-SQL Server.
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `arquos_repo_helper` to your list of dependencies in `mix.exs`:
+## Instalación
+
+La integración de este paquete es sencilla, basta con copiar la siguiente línea en su función `deps` en su archivo `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:arquos_repo_helper, "~> 0.1.0"}
+    {:arquos_repo_helper, git: "https://github.com/solunerus/arquos_repo_helper.git", tag: "v0.1.2"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/arquos_repo_helper>.
+### Uso en Phoenix Framework
 
+Para hacer uso de este paquete en Phoenix Framework se tiene que agregar la siguiente línea en el archivo `repo.ex`:
+
+```elixir
+defmodule MyProjectName.Repo do
+  use Ecto.Repo,
+    otp_app: :my_project_name,
+    adapter: Ecto.Adapters.Tds
+
+    use ArquosRepoHelper, connection_data: Application.get_env(:my_project_name, MyProjectName.Repo) # Línea que se debe añadir
+end
+```
